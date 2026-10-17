@@ -217,7 +217,10 @@ void _fetchShaderDecompiler_parseInstruction_VTX_SEMANTIC(LatteFetchShader* pars
 	auto endianSwap = instr->getField_ENDIAN_SWAP();
 
 	uint32 attribSize = LatteShaderRecompiler_getAttributeSize(dataFormat);
-	cemu_assert(attribSize > 0);
+	// Community shader caches contain fetch shaders with formats we don't decode (BotW). A hard assert kills the
+	// emulator while the cache loads, so keep the old behavior of treating the attribute as zero-sized.
+	if (attribSize == 0)
+		cemuLog_log(LogType::Force, "Fetch shader uses unsupported attribute format 0x{:x}", (uint32)dataFormat);
 	uint32 offsetAfterAttrib = offset + attribSize;
 
 	// get buffer
