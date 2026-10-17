@@ -88,6 +88,16 @@ std::shared_ptr<ControllerManager::ControllerRuntimeState> ControllerManager::ge
 
 	auto state = std::make_shared<ControllerRuntimeState>();
 
+	// A controller created after set_controllers (bound to a gamepad at runtime) must not wait for the next device change
+	auto connected = std::ranges::find(m_controllers, deviceDescriptor, &ControllerInfo::descriptor);
+	if (connected != m_controllers.end())
+	{
+		state->name = connected->name;
+		state->hasRumble = connected->hasRumble;
+		state->hasMotion = connected->hasMotion;
+		state->isConnected = true;
+	}
+
 	m_states[deviceDescriptor] = state;
 
 	return state;

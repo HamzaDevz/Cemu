@@ -17,6 +17,7 @@ class NativeInputDeviceListener(private val context: Context) {
             .toTypedArray()
 
         NativeInput.setControllers(gameControllerInfos)
+        NativeInput.assignControllers()
     }
 
     private val listener = object : InputDeviceListener {

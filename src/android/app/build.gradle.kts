@@ -85,6 +85,8 @@ android {
             applicationIdSuffix = ".debug"
         }
         release {
+            // Odin 3 build: installs next to the upstream release (different signing key).
+            applicationIdSuffix = ".odin3"
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

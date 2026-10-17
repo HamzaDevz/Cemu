@@ -336,6 +336,12 @@ std::shared_ptr<ControllerBase> EmulatedController::get_mapping_controller(uint6
 	return {};
 }
 
+uint64 EmulatedController::get_mapping_button(uint64 mapping) const
+{
+	const auto it = m_mappings.find(mapping);
+	return it != m_mappings.cend() ? it->second.button : 0;
+}
+
 void EmulatedController::delete_mapping(uint64 mapping)
 {
 	m_mappings.erase(mapping);

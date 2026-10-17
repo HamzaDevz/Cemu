@@ -5,6 +5,9 @@
 
 ControllerPtr CreateDefaultDeviceController();
 
+// Binds the connected Android gamepads to players, see AndroidInputHelpers.cpp.
+void AssignAndroidControllers();
+
 class EmulatedControllerManager
 {
   private:
