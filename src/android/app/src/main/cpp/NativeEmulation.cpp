@@ -281,6 +281,9 @@ Java_info_cemu_cemu_nativeinterface_NativeEmulation_setSurface(JNIEnv* env, [[ma
 			ANativeWindow_release(static_cast<ANativeWindow*>(oldWindow));
 		auto newSurface = ANativeWindow_fromSurface(env, surface);
 		ANativeWindow_acquire(newSurface);
+		// Wii U games present at 60 Hz. On a 120 Hz panel SurfaceFlinger latches them on the 8.3 ms grid and they judder
+		// (frames held 8.3 or 25 ms) whenever the emulated vsync drifts across a vsync boundary, so ask for a 60 Hz mode.
+		ANativeWindow_setFrameRate(newSurface, 60.0f, ANATIVEWINDOW_FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);
 		windowHandleInfo.surface = newSurface;
 		windowHandleInfo.surface.notify_all();
 	});

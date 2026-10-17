@@ -24,6 +24,7 @@ cemu_use_precompiled_header(CemuAndroid)
 
 target_link_libraries(CemuAndroid PRIVATE
         -landroid
+        -lnativewindow
         CemuCommon
         CemuAudio
         CemuComponents
