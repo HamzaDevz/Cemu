@@ -9,58 +9,7 @@
 #include "util/helpers/helpers.h"
 #include "util/helpers/Serializer.h"
 #include "Cafe/HW/Latte/Common/RegisterSerializer.h"
-
-/* rects emulation */
-
-void rectsEmulationGS_outputSingleVertex(std::string& gsSrc, LatteDecompilerShader* vertexShader, LatteShaderPSInputTable* psInputTable, sint32 vIdx, const LatteContextRegister& latteRegister)
-{
-	auto parameterMask = vertexShader->outputParameterMask;
-	for (uint32 i = 0; i < 32; i++)
-	{
-		if ((parameterMask & (1 << i)) == 0)
-			continue;
-		sint32 vsSemanticId = psInputTable->getVertexShaderOutParamSemanticId(latteRegister.GetRawView(), i);
-		if (vsSemanticId < 0)
-			continue;
-		// make sure PS has matching input
-		if (!psInputTable->hasPSImportForSemanticId(vsSemanticId))
-			continue;
-		gsSrc.append(fmt::format("passParameterSem{}Out = passParameterSem{}In[{}];\r\n", vsSemanticId, vsSemanticId, vIdx));
-	}
-	gsSrc.append(fmt::format("gl_Position = gl_in[{}].gl_Position;\r\n", vIdx));
-	gsSrc.append("EmitVertex();\r\n");
-}
-
-void rectsEmulationGS_outputGeneratedVertex(std::string& gsSrc, LatteDecompilerShader* vertexShader, LatteShaderPSInputTable* psInputTable, const char* variant, const LatteContextRegister& latteRegister)
-{
-	auto parameterMask = vertexShader->outputParameterMask;
-	for (uint32 i = 0; i < 32; i++)
-	{
-		if ((parameterMask & (1 << i)) == 0)
-			continue;
-		sint32 vsSemanticId = psInputTable->getVertexShaderOutParamSemanticId(latteRegister.GetRawView(), i);
-		if (vsSemanticId < 0)
-			continue;
-		// make sure PS has matching input
-		if (!psInputTable->hasPSImportForSemanticId(vsSemanticId))
-			continue;
-		gsSrc.append(fmt::format("passParameterSem{}Out = gen4thVertex{}(passParameterSem{}In[0], passParameterSem{}In[1], passParameterSem{}In[2]);\r\n", vsSemanticId, variant, vsSemanticId, vsSemanticId, vsSemanticId));
-	}
-	gsSrc.append(fmt::format("gl_Position = gen4thVertex{}(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_in[2].gl_Position);\r\n", variant));
-	gsSrc.append("EmitVertex();\r\n");
-}
-
-void rectsEmulationGS_outputVerticesCode(std::string& gsSrc, LatteDecompilerShader* vertexShader, LatteShaderPSInputTable* psInputTable, sint32 p0, sint32 p1, sint32 p2, sint32 p3, const char* variant, const LatteContextRegister& latteRegister)
-{
-	sint32 pList[4] = { p0, p1, p2, p3 };
-	for (sint32 i = 0; i < 4; i++)
-	{
-		if (pList[i] == 3)
-			rectsEmulationGS_outputGeneratedVertex(gsSrc, vertexShader, psInputTable, variant, latteRegister);
-		else
-			rectsEmulationGS_outputSingleVertex(gsSrc, vertexShader, psInputTable, pList[i], latteRegister);
-	}
-}
+#include "HW/Latte/Renderer/RendererCore.h"
 
 RendererShaderVk* rectsEmulationGS_generate(LatteDecompilerShader* vertexShader, const LatteContextRegister& latteRegister)
 {
@@ -177,54 +126,54 @@ PipelineCompiler::~PipelineCompiler()
 		m_renderPassObj->decRef();
 };
 
-VkFormat PipelineCompiler::GetVertexFormat(uint8 format)
+VkFormat PipelineCompiler::GetVertexFormat(Latte::E_HWFMT format)
 {
 	switch (format)
 	{
-	case FMT_32_32_32_32_FLOAT:
+	case Latte::E_HWFMT::HWFMT_32_32_32_32_FLOAT:
 		return VK_FORMAT_R32G32B32A32_UINT;
-	case FMT_32_32_32_FLOAT:
+	case Latte::E_HWFMT::HWFMT_32_32_32_FLOAT:
 		return VK_FORMAT_R32G32B32_UINT;
-	case FMT_32_32_FLOAT:
+	case Latte::E_HWFMT::HWFMT_32_32_FLOAT:
 		return VK_FORMAT_R32G32_UINT;
-	case FMT_32_FLOAT:
+	case Latte::E_HWFMT::HWFMT_32_FLOAT:
 		return VK_FORMAT_R32_UINT;
-	case FMT_8_8_8_8:
+	case Latte::E_HWFMT::HWFMT_8_8_8_8:
 		return VK_FORMAT_R8G8B8A8_UINT;
-	case FMT_8_8_8:
+	case Latte::E_HWFMT::HWFMT_8_8_8:
 		return VK_FORMAT_R8G8B8_UINT;
-	case FMT_8_8:
+	case Latte::E_HWFMT::HWFMT_8_8:
 		return VK_FORMAT_R8G8_UINT;
-	case FMT_8:
+	case Latte::E_HWFMT::HWFMT_8:
 		return VK_FORMAT_R8_UINT;
-	case FMT_32_32_32_32:
+	case Latte::E_HWFMT::HWFMT_32_32_32_32:
 		return VK_FORMAT_R32G32B32A32_UINT;
-	case FMT_32_32_32:
+	case Latte::E_HWFMT::HWFMT_32_32_32:
 		return VK_FORMAT_R32G32B32_UINT;
-	case FMT_32_32:
+	case Latte::E_HWFMT::HWFMT_32_32:
 		return VK_FORMAT_R32G32_UINT;
-	case FMT_32:
+	case Latte::E_HWFMT::HWFMT_32:
 		return VK_FORMAT_R32_UINT;
-	case FMT_16_16_16_16:
+	case Latte::E_HWFMT::HWFMT_16_16_16_16:
 		return VK_FORMAT_R16G16B16A16_UINT; // verified to match OpenGL
-	case FMT_16_16_16:
+	case Latte::E_HWFMT::HWFMT_16_16_16:
 		return VK_FORMAT_R16G16B16_UINT;
-	case FMT_16_16:
+	case Latte::E_HWFMT::HWFMT_16_16:
 		return VK_FORMAT_R16G16_UINT;
-	case FMT_16:
+	case Latte::E_HWFMT::HWFMT_16:
 		return VK_FORMAT_R16_UINT;
-	case FMT_16_16_16_16_FLOAT:
+	case Latte::E_HWFMT::HWFMT_16_16_16_16_FLOAT:
 		return VK_FORMAT_R16G16B16A16_UINT; // verified to match OpenGL
-	case FMT_16_16_16_FLOAT:
+	case Latte::E_HWFMT::HWFMT_16_16_16_FLOAT:
 		return VK_FORMAT_R16G16B16_UINT;
-	case FMT_16_16_FLOAT:
+	case Latte::E_HWFMT::HWFMT_16_16_FLOAT:
 		return VK_FORMAT_R16G16_UINT;
-	case FMT_16_FLOAT:
+	case Latte::E_HWFMT::HWFMT_16_FLOAT:
 		return VK_FORMAT_R16_UINT;
-	case FMT_2_10_10_10:
+	case Latte::E_HWFMT::HWFMT_2_10_10_10:
 		return VK_FORMAT_R32_UINT; // verified to match OpenGL
 	default:
-		cemuLog_log(LogType::Force, "Unsupported vertex format: {:02x}", format);
+		cemuLog_log(LogType::Force, "Unsupported vertex format: {:02x}", (uint32)format);
 		assert_dbg();
 		return VK_FORMAT_UNDEFINED;
 	}
@@ -865,6 +814,10 @@ void PipelineCompiler::InitDynamicState(PipelineInfo* pipelineInfo, bool usesBle
 	{
 		dynamicStates.emplace_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
 		pipelineInfo->usesDepthBias = true;
+	}
+	if (VulkanRenderer::GetInstance()->UseAttachmentFeedbackLoop())
+	{
+		dynamicStates.emplace_back(VK_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT);
 	}
 
 	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
