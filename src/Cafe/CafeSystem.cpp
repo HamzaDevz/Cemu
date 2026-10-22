@@ -430,6 +430,8 @@ void cemu_initForGame()
 	cemuLog_log(LogType::Force, "------- Run title -------");
 	// wait till GPU thread is initialized
 	while (g_isGPUInitFinished == false) std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	// the game's own code starts here, once the shader cache is loaded: the odin3 lab counts the game's frames from this line
+	cemuLog_log(LogType::Force, "------- Title started -------");
 	// run coreinit rpl_entry
 	RPLLoader_CallCoreinitEntrypoint();
 	// init AX and start AX I/O thread
