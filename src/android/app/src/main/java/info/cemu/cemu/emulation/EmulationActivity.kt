@@ -1,6 +1,7 @@
 package info.cemu.cemu.emulation
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -92,7 +93,7 @@ class EmulationActivity : AppCompatActivity() {
         return super.dispatchKeyEvent(event)
     }
 
-    private fun getGamePath(): String {
+    private fun getGamePath(intent: Intent): String? {
         val extras = intent.extras
         val data = intent.data
         var launchPath: String? = null
@@ -103,10 +104,6 @@ class EmulationActivity : AppCompatActivity() {
 
         if (launchPath == null && data != null) {
             launchPath = data.toString()
-        }
-
-        if (launchPath == null) {
-            throw RuntimeException("launchPath is null")
         }
 
         return launchPath
@@ -123,7 +120,7 @@ class EmulationActivity : AppCompatActivity() {
 
         setFullscreen()
 
-        val gamePath = getGamePath()
+        val gamePath = getGamePath(intent) ?: throw RuntimeException("launchPath is null")
 
         setContent {
             TranslatableContent {
@@ -136,6 +133,20 @@ class EmulationActivity : AppCompatActivity() {
                     )
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+
+        // Frontends launch with NEW_TASK only, so another game lands here while one runs. The core
+        // runs one game per process: start over in a fresh process with the new game
+        val newGamePath = getGamePath(intent) ?: return
+        if (newGamePath != getGamePath(this.intent)) {
+            startActivity(
+                Intent(intent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            )
+            exitProcess(0)
         }
     }
 
