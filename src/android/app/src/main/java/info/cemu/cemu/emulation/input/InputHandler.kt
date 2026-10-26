@@ -13,6 +13,10 @@ object InputHandler {
 
         val device = event.device
 
+        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0 && KeyEvent.isGamepadButton(event.keyCode)) {
+            NativeInput.claimController(device.descriptor)
+        }
+
         NativeInput.onControllerKey(
             device.descriptor,
             event.keyCode,

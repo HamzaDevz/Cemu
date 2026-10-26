@@ -131,10 +131,13 @@ void ControllerManager::process_axis_event(const std::string& deviceDescriptor, 
 		case AMOTION_EVENT_AXIS_RZ:
 			controllerState.rotation.y = value;
 			break;
+		// Some gamepads, such as the Odin 3's own pad, report their triggers as brake and gas
 		case AMOTION_EVENT_AXIS_LTRIGGER:
+		case AMOTION_EVENT_AXIS_BRAKE:
 			controllerState.trigger.x = value;
 			break;
 		case AMOTION_EVENT_AXIS_RTRIGGER:
+		case AMOTION_EVENT_AXIS_GAS:
 			controllerState.trigger.y = value;
 			break;
 		case AMOTION_EVENT_AXIS_HAT_X:

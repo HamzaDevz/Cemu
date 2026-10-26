@@ -175,9 +175,16 @@ object NativeInput {
     @JvmStatic
     external fun setControllers(controllers: Array<ControllerInfo>)
 
-    /** Rebinds players whose gamepad changed descriptor and hands unused gamepads to free players. */
+    /** Rebinds players whose gamepad changed descriptor and gives player 1 back to the handheld's own pad. */
     @JvmStatic
     external fun assignControllers()
+
+    /** Lets a gamepad that plays for no one join, as on a Switch. */
+    @JvmStatic
+    external fun claimController(deviceDescriptor: String)
+
+    @JvmStatic
+    external fun returnPlayerOneToBuiltIn()
 
     @JvmStatic
     external fun setControllerType(index: Int, emulatedControllerType: Int)

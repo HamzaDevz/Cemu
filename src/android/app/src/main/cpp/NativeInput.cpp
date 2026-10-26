@@ -217,6 +217,18 @@ Java_info_cemu_cemu_nativeinterface_NativeInput_assignControllers([[maybe_unused
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
+Java_info_cemu_cemu_nativeinterface_NativeInput_claimController(JNIEnv* env, [[maybe_unused]] jclass clazz, jstring deviceDescriptor)
+{
+	ClaimAndroidController(JNIUtils::FromJString(env, deviceDescriptor));
+}
+
+extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
+Java_info_cemu_cemu_nativeinterface_NativeInput_returnPlayerOneToBuiltIn([[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz)
+{
+	ReturnPlayerOneToBuiltIn();
+}
+
+extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
 Java_info_cemu_cemu_nativeinterface_NativeInput_setControllerType([[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz, jint index, jint emulated_controller_type)
 {
 	auto type = static_cast<EmulatedController::Type>(emulated_controller_type);
