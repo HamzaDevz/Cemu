@@ -180,8 +180,16 @@ void AssignAndroidControllers()
 		}
 	}
 
-	if (const auto* builtIn = state.builtIn(); builtIn && players[0] && !state.holder(0) && !used.contains(builtIn->descriptor))
+	// The handheld's own pad leaves any other player it holds to take player 1
+	if (const auto* builtIn = state.builtIn(); builtIn && players[0] && !state.holder(0))
+	{
+		for (size_t i = 1; i < players.size(); i++)
+		{
+			if (auto holder = state.holder(i); holder && holder->uuid() == builtIn->descriptor)
+				players[i]->remove_controller(holder);
+		}
 		state.assign(0, *builtIn);
+	}
 }
 
 // Like a Switch, a gamepad that plays for no one joins on a button press: as player 1 if the handheld's own pad or no
