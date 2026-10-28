@@ -129,7 +129,8 @@ fun EmulationScreen(
     LaunchedEffect(Unit) {
         HotkeyManager.actions.collect { action ->
             when (action) {
-                HotkeyAction.QUIT -> showQuitConfirmationDialog = true
+                // A held combo is deliberate: leave right away, without a dialog to confirm with the pad
+                HotkeyAction.QUIT -> onQuit()
                 HotkeyAction.TOGGLE_MENU -> toggleMenu()
                 HotkeyAction.SHOW_EMULATED_USB_DEVICES_DIALOG -> showEmulatedUSBDevices = true
             }

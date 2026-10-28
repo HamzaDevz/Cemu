@@ -80,13 +80,18 @@ class EmulationActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        HotkeyManager.onKeyEvent(event)
-
-        if (processInputEvents && InputHandler.onKeyEvent(event)) {
+        // A pad's Home button (Xbox, PS) leaves the game, back to the frontend that launched it.
+        // Quit on release so the release does not reach the frontend
+        if (event.keyCode == KeyEvent.KEYCODE_BUTTON_MODE && event.isFromPhysicalController()) {
+            if (event.action == KeyEvent.ACTION_UP) {
+                onQuit()
+            }
             return true
         }
 
-        if (event.keyCode == KeyEvent.KEYCODE_BUTTON_MODE && event.isFromPhysicalController()) {
+        HotkeyManager.onKeyEvent(event)
+
+        if (processInputEvents && InputHandler.onKeyEvent(event)) {
             return true
         }
 
