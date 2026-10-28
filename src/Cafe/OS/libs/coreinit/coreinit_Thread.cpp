@@ -1288,6 +1288,9 @@ namespace coreinit
 		bool isMainCore = g_isMulticoreMode == false || t_assignedCoreIndex == 1;
 		sint32 coreIndex = t_assignedCoreIndex;
 		__OSUnlockScheduler();
+#if BOOST_PLAT_ANDROID
+		uint64 idleSince = 0;
+#endif
 		while (true)
 		{
 			if (!g_coreRunQueueThreadCount[coreIndex].isZero()) // avoid hammering the lock on the main core if there is no runable thread
@@ -1298,6 +1301,9 @@ namespace coreinit
 				{
 					cemu_assert_debug(nextThread->state == OSThread_t::THREAD_STATE::STATE_RUNNING);
 					__OSSwitchToThreadFiber(nextThread, coreIndex);
+#if BOOST_PLAT_ANDROID
+					idleSince = 0;
+#endif
 				}
 				__OSUnlockScheduler();
 			}
@@ -1306,6 +1312,20 @@ namespace coreinit
 				__OSCheckSystemEvents();
 				if(g_isMulticoreMode == false)
 					coreIndex = (coreIndex + 1) % 3;
+#if BOOST_PLAT_ANDROID
+				// nap while nothing is runnable instead of spinning, which kept a prime core at full clock.
+				// Alarms are only polled here, so keep spinning right before the next one, and briefly after
+				// the core went idle since guest threads often hand work back within microseconds
+				else
+				{
+					uint64 now = OSGetTime();
+					if (idleSince == 0)
+						idleSince = now;
+					uint64 soonestAlarm = alarm_getSoonestFire();
+					if (now - idleSince > EspressoTime::ConvertNsToTimerTicks(100000) && soonestAlarm > now && soonestAlarm - now > EspressoTime::ConvertNsToTimerTicks(400000))
+						g_coreRunQueueThreadCount[coreIndex].waitUntilNonZeroFor(std::chrono::microseconds(250));
+				}
+#endif
 			}
 			else
 			{

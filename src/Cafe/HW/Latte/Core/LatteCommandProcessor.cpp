@@ -15,6 +15,7 @@
 #include "Cafe/OS/libs/TCL/TCL.h" // TCL currently handles the GPU command ringbuffer
 
 #include "Cafe/CafeSystem.h"
+#include "util/highresolutiontimer/HighResolutionTimer.h"
 
 #include <boost/container/small_vector.hpp>
 
@@ -161,6 +162,18 @@ void LatteCP_signalEnterWait()
 	LatteIndices_invalidateAll();
 }
 
+#if BOOST_PLAT_ANDROID
+// sleep while the GPU thread has nothing to do, but keep spinning right before the virtual vsync so it still fires on time
+static void LatteCP_idleSleep()
+{
+	HRTick now = HighResolutionTimer::now().getTick();
+	if (LatteGPUState.timer_nextVSync > now && LatteGPUState.timer_nextVSync - now > HighResolutionTimer::microsecondsToTicks(400))
+		std::this_thread::sleep_for(std::chrono::microseconds(100));
+	else
+		std::this_thread::yield();
+}
+#endif
+
 /*
 * Read a U32 from the command buffer
 * If no data is available then wait in a busy loop
@@ -168,6 +181,9 @@ void LatteCP_signalEnterWait()
 uint32 LatteCP_readU32Deprc()
 {
 	// no display list active
+#if BOOST_PLAT_ANDROID
+	uint32 idleRounds = 0;
+#endif
 	while (true)
 	{
 		uint32 cmdWord;
@@ -191,6 +207,12 @@ uint32 LatteCP_readU32Deprc()
 		// still no command data available, do some other tasks
 		LatteTiming_HandleTimedVsync();
 		LatteAsyncCommands_checkAndExecute();
+#if BOOST_PLAT_ANDROID
+		// past a short spin (a few hundred microseconds), sleep until the next frame's commands arrive
+		if (++idleRounds > 64)
+			LatteCP_idleSleep();
+		else
+#endif
 		std::this_thread::yield();
 		performanceMonitor.gpuTime_idleTime.endMeasuring();
 	}
@@ -973,7 +995,11 @@ LatteCMDPtr LatteCP_itHLEWaitForFlip(LatteCMDPtr cmd, uint32 nWords)
 		}
 		// check if any GPU events happened
 		LatteTiming_HandleTimedVsync();
+#if BOOST_PLAT_ANDROID
+		LatteCP_idleSleep();
+#else
 		std::this_thread::yield();
+#endif
 	}
 	return cmd;
 }

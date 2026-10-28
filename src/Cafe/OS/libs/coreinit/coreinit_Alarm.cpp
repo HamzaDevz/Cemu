@@ -116,6 +116,11 @@ namespace coreinit
 			return currentTick >= g_soonestAlarm;
 		}
 
+		static uint64 getSoonestFire()
+		{
+			return g_soonestAlarm;
+		}
+
         static void Reset()
         {
             g_activeAlarmList.clear();
@@ -171,6 +176,11 @@ namespace coreinit
 		__OSLockScheduler();
 		OSHostAlarm::updateAlarms(currentTick);
 		__OSUnlockScheduler();
+	}
+
+	uint64 alarm_getSoonestFire()
+	{
+		return OSHostAlarm::getSoonestFire();
 	}
 
 	/* alarm API */
